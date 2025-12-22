@@ -41,21 +41,21 @@ const userSchema = new mongoose.Schema({
     address_detail: [
         {
             type: mongoose.Schema.ObjectId,
-            ref: 'address'
+            ref: 'Address'
 
         }
     ],
     shopping_cart: [
         {
             type: mongoose.Schema.ObjectId,
-            ref: 'cartProduct'
+            ref: 'CartProduct'
 
         }
     ],
     orderHistory: [
         {
             type: mongoose.Schema.ObjectId,
-            ref: 'order'
+            ref: 'Order'
 
         }
     ],
