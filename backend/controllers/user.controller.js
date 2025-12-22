@@ -183,3 +183,36 @@ export const uploadAvatar = async (req, res) => {
         });
     }
 };
+
+
+//update user detail 
+export const updateUserDetailController = async (req, res) => {
+    try {
+        const userId = req.user._id
+        const { name, email, mobile, password } = req.body
+
+        let hashPassword = ''
+
+        if (password) {
+            const salt = await bcrypt.genSalt(10)
+            hashPassword = await bcrypt.hash(password, salt)
+        }
+        const updateUser = await User.findByIdAndUpdate(userId, {
+            ...(name && { name: name }),
+            ...(email && { email: email }),
+            ...(mobile && { mobile: mobile }),
+            ...(password && { password: password })
+        })
+        return res.status(200).json({
+            success: false,
+            message: 'update successfully'
+        })
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            success: false,
+            message: error || error.message
+        })
+    }
+}
