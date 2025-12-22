@@ -25,18 +25,9 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
-    verify_email: {
-        type: Boolean,
-        default: false
-    },
     last_login_date: {
         type: Date,
         default: ''
-    },
-    status: {
-        type: String,
-        enum: ['Active', 'Inactive', 'Suspended'],
-        default: "Active"
     },
     address_detail: [
         {

@@ -1,10 +1,11 @@
 import express from 'express'
 import 'dotenv/config'
-import dbConnect from './db/connection.js'
+import dbConnect from './config/connection.js'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import morgan from 'morgan'
 import helmet from 'helmet'
+import userRouter from './route/user.route.js'
 
 const app = express()
 
@@ -23,6 +24,9 @@ app.use(helmet({
     crossOriginResourcePolicy: true
 }))
 app.use(morgan('dev'))
+
+
+app.use('/api/v1/user', userRouter)
 
 dbConnect().then(() => {
     app.listen(PORT, () => {
