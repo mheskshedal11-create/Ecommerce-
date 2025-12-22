@@ -4,13 +4,11 @@ import dbConnect from './db/connection.js'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import morgan from 'morgan'
-import helmet, { crossOriginResourcePolicy } from 'helmet'
-
+import helmet from 'helmet'
 
 const app = express()
 
 const PORT = process.env.PORT || 4000
-
 
 app.use(cors({
     origin: process.env.FRONTEND_URL,
@@ -22,21 +20,12 @@ app.use(cookieParser())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 app.use(helmet({
-    crossOriginResourcePolicy: false
+    crossOriginResourcePolicy: true
 }))
 app.use(morgan('dev'))
 
-
-//create db connection
-dbConnect().then((res) => {
+dbConnect().then(() => {
     app.listen(PORT, () => {
-        console.log(`server is running http://localhost:${PORT}`)
+        console.log(`Server is running at http://localhost:${PORT}`)
     })
 })
-
-
-
-
-
-
-
