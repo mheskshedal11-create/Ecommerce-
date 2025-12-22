@@ -2,6 +2,7 @@ import User from '../models/user.model.js'
 import bcrypt from 'bcryptjs'
 import generateAccessToken from '../utils/generateAccessToken.js'
 import generateRefreshToken from '../utils/generateRefreshToken.js'
+import uploadImageCloudinary from '../utils/uploadImageCloudinary.js'
 
 export const registerUserController = async (req, res) => {
     try {
@@ -151,6 +152,34 @@ export const logoutUserController = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: error.message || 'Internal server error'
+        });
+    }
+};
+
+//export user avatar
+export const uploadAvatar = async (req, res) => {
+    try {
+        const userId = req.user._id; // auth middleware
+        const image = req.file; // multer middleware
+
+        // Upload the image to Cloudinary
+        const upload = await uploadImageCloudinary(image);
+
+        // Update the user's avatar field with the Cloudinary image URL
+        const updateUser = await User.findByIdAndUpdate(userId, {
+            $set: { avatar: upload.url } // Fixed the syntax here
+        });
+
+        return res.json({
+            message: 'Profile image uploaded successfully',
+            data: upload
+        });
+
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || error
         });
     }
 };
