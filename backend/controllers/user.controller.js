@@ -3,13 +3,14 @@ import bcrypt from 'bcryptjs'
 import generateAccessToken from '../utils/generateAccessToken.js'
 import generateRefreshToken from '../utils/generateRefreshToken.js'
 import uploadImageCloudinary from '../utils/uploadImageCloudinary.js'
+import generateOtp from '../utils/generateOpt.js'
 
 export const registerUserController = async (req, res) => {
     try {
-        const { name, email, password } = req.body
+        const { name, email, password, mobile } = req.body
 
         // Validate required fields
-        if (!name || !email || !password) {
+        if (!name || !email || !password || !mobile) {
             return res.status(400).json({
                 success: false,
                 message: 'Please fill the Required Fields'
@@ -33,7 +34,8 @@ export const registerUserController = async (req, res) => {
         const newUser = new User({
             name,
             email,
-            password: hashPassword
+            password: hashPassword,
+            mobile
         })
         await newUser.save()
 
@@ -56,31 +58,40 @@ export const registerUserController = async (req, res) => {
 
 export const loginUserController = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, mobile, password } = req.body;
 
-        // Validate input fields
-        if (!email || !password) {
+        // 1️⃣ Validation
+        if ((!email && !mobile) || !password) {
             return res.status(400).json({
                 success: false,
-                message: "Email and password are required"
+                message: "Email or mobile and password are required",
             });
         }
 
-        // Find user by email and exclude password field in the response
-        const user = await User.findOne({ email })
+        // 2️⃣ Build query dynamically
+        let query = {};
+        if (email) {
+            query.email = email.toLowerCase();
+        } else if (mobile) {
+            query.mobile = mobile;
+        }
+
+        // 3️⃣ Find user
+        const user = await User.findOne(query);
         if (!user) {
             return res.status(401).json({
                 success: false,
-                message: 'Invalid credentials'
+                message: "Invalid credentials",
             });
         }
 
-        // Check if password matches
+
+        // 4️⃣ Check password
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(401).json({
                 success: false,
-                message: 'Invalid credentials'
+                message: "Invalid credentials",
             });
         }
 
@@ -279,3 +290,67 @@ export const updatePasswordController = async (req, res) => {
         })
     }
 }
+
+//forgot password
+export const forgotPasswordController = async (req, res) => {
+    try {
+        const { mobile, email } = req.body;
+
+        // Validate input
+        if (!mobile && !email) {
+            return res.status(400).json({
+                success: false,
+                message: "Please enter either your mobile number or email"
+            });
+        }
+
+        // Find user by email or mobile
+        let user = null;
+        if (email) {
+            user = await User.findOne({ email });
+            if (!user) {
+                return res.status(400).json({
+                    success: false,
+                    message: "No user found with this email"
+                });
+            }
+        }
+
+        if (mobile) {
+            user = await User.findOne({ mobile });
+            if (!user) {
+                return res.status(400).json({
+                    success: false,
+                    message: "No user found with this mobile number"
+                });
+            }
+        }
+
+        // Generate OTP and set expiry time
+        const otp = generateOtp();  // Ensure generateOtp() is defined elsewhere
+        const expire_time = new Date().getTime() + 60 * 60 * 1000; // 1 hour expiry
+
+        // Update user with OTP and expiry
+        const updatedUser = await User.findByIdAndUpdate(user._id, {
+            forgot_password_otp: otp,
+            forgot_password_expiry: new Date(expire_time).toISOString()
+        }, { new: true });
+
+        // Send success response
+        return res.status(200).json({
+            success: true,
+            message: "Successfully initiated password reset. Check your email or mobile for OTP.",
+            update: updatedUser
+        });
+
+    } catch (error) {
+        console.error('Error during password reset process:', error.message);
+        console.error(error.stack);  // This gives you the full stack trace
+
+        return res.status(500).json({
+            success: false,
+            message: "An error occurred while processing your request.",
+            error: error.message  // Optionally include the error message in the response for easier debugging
+        });
+    }
+};
