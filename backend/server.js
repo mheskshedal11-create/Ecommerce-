@@ -6,6 +6,8 @@ import cors from 'cors'
 import morgan from 'morgan'
 import helmet from 'helmet'
 import userRouter from './route/user.route.js'
+import categoryRouter from './route/category.controller.js'
+import uploadImage from './route/upload.route.js'
 
 const app = express()
 
@@ -27,6 +29,8 @@ app.use(morgan('dev'))
 
 
 app.use('/api/v1/user', userRouter)
+app.use('/api/v1/category', categoryRouter)
+app.use('/api/v1/file', uploadImage)
 
 dbConnect().then(() => {
     app.listen(PORT, () => {
