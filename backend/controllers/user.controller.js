@@ -291,7 +291,7 @@ export const updatePasswordController = async (req, res) => {
     }
 }
 
-//forgot password
+// Forgot Password Controller
 export const forgotPasswordController = async (req, res) => {
     try {
         const { mobile, email } = req.body;
@@ -309,7 +309,7 @@ export const forgotPasswordController = async (req, res) => {
         if (email) {
             user = await User.findOne({ email });
             if (!user) {
-                return res.status(400).json({
+                return res.status(404).json({
                     success: false,
                     message: "No user found with this email"
                 });
@@ -319,7 +319,7 @@ export const forgotPasswordController = async (req, res) => {
         if (mobile) {
             user = await User.findOne({ mobile });
             if (!user) {
-                return res.status(400).json({
+                return res.status(404).json({
                     success: false,
                     message: "No user found with this mobile number"
                 });
@@ -339,7 +339,7 @@ export const forgotPasswordController = async (req, res) => {
         // Send success response
         return res.status(200).json({
             success: true,
-            message: "Successfully initiated password reset. Check your email or mobile for OTP.",
+            message: "Password reset initiated. Check your email or mobile for OTP.",
             update: updatedUser
         });
 
@@ -351,6 +351,106 @@ export const forgotPasswordController = async (req, res) => {
             success: false,
             message: "An error occurred while processing your request.",
             error: error.message  // Optionally include the error message in the response for easier debugging
+        });
+    }
+};
+
+// Verify Forgot Password (OTP verification)
+export const verifyForgotPassword = async (req, res) => {
+    try {
+        const { email, mobile, otp } = req.body;
+
+        if (!email && !mobile) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid email or mobile"
+            });
+        }
+
+        const user = await User.findOne({ $or: [{ email: email }, { mobile: mobile }] });
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found with the provided email or mobile"
+            });
+        }
+
+        const currentTime = new Date();
+        if (user.forgot_password_expiry < currentTime) {
+            return res.status(400).json({
+                success: false,
+                message: "OTP has expired"
+            });
+        }
+
+        if (otp !== user.forgot_password_otp) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid OTP"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "OTP verified successfully"
+        });
+    } catch (error) {
+        console.log(error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || "An error occurred while verifying OTP"
+        });
+    }
+};
+
+// Reset Password Controller
+export const resetPasswordController = async (req, res) => {
+    try {
+        const { email, mobile, newPassword, confirmPassword } = req.body;
+
+        if (!email && !mobile || !newPassword || !confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide email or mobile, newPassword, and confirmPassword"
+            });
+        }
+
+        const user = await User.findOne({ $or: [{ email }, { mobile }] });
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "Email or Mobile Number not available"
+            });
+        }
+
+        if (newPassword !== confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "Password and Confirm Password do not match"
+            });
+        }
+
+        // Hash the new password
+        const salt = await bcrypt.genSalt(10);
+        const hashPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update the user password and clear OTP
+        const update = await User.findByIdAndUpdate(user._id, {
+            password: hashPassword,
+            forgot_password_otp: '',
+            forgot_password_expiry: ''
+        }, { new: true });
+
+        return res.status(200).json({
+            success: true,
+            message: "Password updated successfully",
+            update
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message || "An error occurred while updating the password"
         });
     }
 };
