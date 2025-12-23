@@ -1,5 +1,5 @@
 import express from 'express'
-import { forgotPasswordController, loginUserController, logoutUserController, registerUserController, resetPasswordController, updatePasswordController, updateUserDetailController, uploadAvatar, verifyForgotPassword } from '../controllers/user.controller.js'
+import { forgotPasswordController, getLoginUserProfileController, loginUserController, logoutUserController, registerUserController, resetPasswordController, updatePasswordController, updateUserDetailController, uploadAvatar, verifyForgotPassword } from '../controllers/user.controller.js'
 import authMiddleware from '../middleware/auth.middleware.js'
 import upload from '../middleware/multer.js'
 
@@ -13,5 +13,6 @@ userRouter.put('/update-password', authMiddleware, updatePasswordController)
 userRouter.get('/forgot-password', forgotPasswordController)
 userRouter.put('/verify-otp', verifyForgotPassword)
 userRouter.put('/reset-password', resetPasswordController)
+userRouter.get('/get-profile', authMiddleware, getLoginUserProfileController)
 
 export default userRouter

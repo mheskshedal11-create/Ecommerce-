@@ -5,6 +5,7 @@ import generateRefreshToken from '../utils/generateRefreshToken.js'
 import uploadImageCloudinary from '../utils/uploadImageCloudinary.js'
 import generateOtp from '../utils/generateOpt.js'
 
+
 export const registerUserController = async (req, res) => {
     try {
         const { name, email, password, mobile } = req.body
@@ -454,3 +455,31 @@ export const resetPasswordController = async (req, res) => {
         });
     }
 };
+
+export const getLoginUserProfileController = async (req, res) => {
+    try {
+        const userId = req.user._id
+
+
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Profile not found'
+            })
+        }
+        const user = await User.findById(userId).select('-password -refresh_token')
+        return res.status(200).json({
+            success: true,
+            message: "profile get successfully",
+            user
+        })
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({
+            success: false,
+            message: "cannot get the user Profile"
+        })
+
+    }
+}
